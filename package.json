@@ -1,0 +1,21 @@
+{
+  "name": "crypto-tracker",
+  "version": "0.0.1",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jasmine-node src/**/**/*[sS]pec.js --color --verbose",
+    "test:watch": "jasmine-node src/**/**/*[sS]pec.js --color --verbose --autotest --watch src/**/**/*.js"
+  },
+  "author": "Tom Christian",
+  "license": "ISC",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "querystring": "^0.2.0",
+    "request": "^2.85.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.1.0"
+  }
+}
