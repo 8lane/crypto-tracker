@@ -23,17 +23,47 @@ class BinanceSync {
     }, [])
 
     Promise.all(pairingsToFetch).then((result) => {
-      console.log('RES',  result);
+      db.add({
+        type: 'orders',
+        userId: this.userId,
+        orders: this.formatOrders(result)
+      }).then(() => console.log('saved orders'), this.handleError)
     })
   }
 
   formatBalances(balances) {
     return balances
-      .filter(item => parseFloat(item.free) > 0)
+      .filter((item) => parseFloat(item.free) > 0)
       .reduce((accumulator, item) => {
         accumulator.push({ asset: item.asset, amount: item.free })
         return accumulator
       }, [])
+  }
+
+  formatOrders(pairings) {
+    let formattedOrders
+
+    pairings.forEach((orders) => {
+      const symbol = orders[0].symbol
+
+      formattedOrders = Object.assign({}, formattedOrders, {
+        [symbol]: orders
+          .filter((item) => item.status === 'FILLED')
+          .reduce((accumulator, item) => {
+            accumulator.push({
+              id: item.clientOrderId,
+              amount: item.origQty,
+              price: item.price,
+              type: item.type,
+              side: item.side,
+              timestamp: item.time
+            })
+            return accumulator
+          }, [])
+      })
+    })
+
+    return formattedOrders
   }
 
   handleError(err) {
