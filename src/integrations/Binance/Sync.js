@@ -17,18 +17,13 @@ class BinanceSync {
   }
   
   getOrders() {
-    const pairingsToFetch = this.pairings.reduce((accumulator, symbol) => {
-      accumulator.push(this.api.allOrders(symbol))
-      return accumulator
-    }, [])
+    const pairingsToFetch = Array.from(this.pairings, (pairing) => this.api.allOrders(pairing))
 
-    Promise.all(pairingsToFetch).then((result) => {
-      db.add({
-        type: 'orders',
-        userId: this.userId,
-        orders: this.formatOrders(result)
-      }).then(() => console.log('saved orders'), this.handleError)
-    })
+    Promise.all(pairingsToFetch).then((result) => db.add({
+      type: 'orders',
+      userId: this.userId,
+      orders: this.formatOrders(result)
+    }).then(() => console.log('saved orders'), this.handleError))
   }
 
   formatBalances(balances) {

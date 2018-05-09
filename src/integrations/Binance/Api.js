@@ -2,7 +2,10 @@ const qs = require('querystring')
 const crypto = require('crypto')
 const request = require('../../utils/request')
 
-/* https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md */
+/**
+ * Binance - https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
+ * API integration based on - https://github.com/zoeyg/binance
+ */
 
 class Api {
   constructor({
