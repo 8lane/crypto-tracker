@@ -7,6 +7,7 @@ const keys = require('./secretStuff')
 
 const BinanceSync = require('./src/integrations/Binance/Sync')
 const CoinApiSync = require('./src/integrations/CoinApi/Sync')
+const CryptoCompareSync = require('./src/integrations/CryptoCompare/Sync')
 
 // const sync = new BinanceSync({
 //   userId: 1,
@@ -17,12 +18,16 @@ const CoinApiSync = require('./src/integrations/CoinApi/Sync')
 
 // sync.init()
 
+// const coins = new CoinApiSync({
+//   apiKey: keys.CoinAPI.apiKey,
+//   assets: ['NEO', 'DRGN']
+// })
 
-const coins = new CoinApiSync({
-  apiKey: keys.CoinAPI.apiKey,
-  assets: ['NEO', 'DRGN']
+const coins = new CryptoCompareSync({
+  assets: ['NEO', 'DRGN'],
+  currencies: ['USD', 'GBP']
 })
 
-coins.init()
+coins.saveAllCoins()
 
 
