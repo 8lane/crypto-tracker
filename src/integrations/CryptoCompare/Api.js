@@ -14,14 +14,18 @@ class Api {
     return this.fetch({}, 'data/all/coinlist')
   }
 
-  getExchangeRates(asset, currencies) {
+  getExchangeRate(asset, currencies) {
     return this.fetch({ fysym: asset, tsyms: currencies.join(',') }, 'data/price')
+  }
+
+  getExchangeRates(assets, currencies) {
+    return this.fetch({ fsyms: assets.join(','), tsyms: currencies.join(',') }, 'data/pricemulti')
   }
 
   fetch(query, endpoint) {
     let queryString
 
-    queryString = qs.stringify(query)
+    queryString = qs.stringify({ ...query, extraParams: 'CryptoTrackerDev' })
 
     const options = {
       url: `https://min-api.cryptocompare.com/${endpoint}?${queryString}`,
@@ -35,11 +39,7 @@ class Api {
           reject(error)
         }
 
-        if (query.fysym) {
-          resolve({ [query.fysym]: result })
-        } else {
-          resolve(result.Data)
-        }
+        resolve(result)
       })
     )
   }

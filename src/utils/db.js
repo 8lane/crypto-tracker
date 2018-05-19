@@ -1,21 +1,56 @@
-const nano = require('nano')('http://localhost:5984')
+const MongoClient = require('mongodb').MongoClient
+const mongoUrl = 'mongodb://localhost:27017'
+const dbName = 'CryptoTracker'
 
-class Database {
-  constructor() {
-    this.db = nano.db.use('crypto-tracker')
-  }
+let _db
 
-  add(data = {}) {
+const Database = {
+  connect: () => {
     return new Promise((resolve, reject) => {
-      this.db.insert(data, null, (err, body) => {
+      MongoClient.connect(mongoUrl, (err, client) => {
         if (err) {
           reject(err)
-        } else {
-          resolve(body)
         }
+
+        _db = client.db(dbName)
+        
+        console.log("Connected successfully to server")
+
+        resolve()
+      })
+    })
+  },
+
+  getDb: () => {
+    return _db
+  },
+
+  getCollection(collection) {
+    return new Promise((resolve, reject) => {
+      _db.collection(collection).find().toArray((err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+  },
+
+  add(collection, data) {
+    return new Promise((resolve, reject) => {
+      _db.collection(collection).insert(data, (err, result) => {
+        if (err) reject(err)
+        resolve(result)
+      })
+    })
+  },
+
+  remove(collection) {
+    return new Promise((resolve, reject) => {
+      _db.collection(collection).remove((err, result) => {
+        if (err) reject(err)
+        resolve(result)
       })
     })
   }
 }
 
-module.exports = new Database()
+module.exports = Database

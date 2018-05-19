@@ -12,24 +12,38 @@ describe('When making a request to the CryptoCompare Api', () => {
 
   it('should make a request', () => {
     expect(sut.request).toHaveBeenCalledWith({
-      url: 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD%2CEUR%2CGBP',
+      url: 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD%2CEUR%2CGBP&extraParams=CryptoTrackerDev',
       method: 'GET',
       timeout: 3000,
     }, jasmine.any(Function))
   })
 })
 
-describe('When getting an exchange rate from the CryptoCompare API', () => {
+describe('When getting a single exchange rate from the CryptoCompare API', () => {
   let sut
 
   beforeEach(() => {
     sut = new CryptoCompareApi()
     spyOn(sut, 'fetch');
-    sut.getExchangeRates('DRGN', ['EUR', 'CAD'])
+    sut.getExchangeRate('DRGN', ['EUR', 'CAD'])
   })
 
   it('should make a request to the exchangerate endpoint', () => {
     expect(sut.fetch).toHaveBeenCalledWith({ fysym: 'DRGN', tsyms: 'EUR,CAD' }, 'data/price')
+  })
+})
+
+describe('When getting multiple exchange rates from the CryptoCompare API', () => {
+  let sut
+
+  beforeEach(() => {
+    sut = new CryptoCompareApi()
+    spyOn(sut, 'fetch');
+    sut.getExchangeRates(['DRGN', 'BTC', 'ETC', 'NEO', 'LTC'], ['EUR', 'CAD'])
+  })
+
+  it('should make a request to the exchangerate endpoint', () => {
+    expect(sut.fetch).toHaveBeenCalledWith({ fsyms: 'DRGN,BTC,ETC,NEO,LTC', tsyms: 'EUR,CAD' }, 'data/pricemulti')
   })
 })
 

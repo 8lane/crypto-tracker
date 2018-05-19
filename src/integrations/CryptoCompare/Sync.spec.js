@@ -1,69 +1,99 @@
-const db = require('../../utils/db')
 const CryptoCompareSync = require('./Sync')
+const mongoUtil = require('../../utils/db')
+const Config = require('./config')
 
 const mockAssets = [
   {
     "BTC": {
-      "USD": 67.85,
-      "GBP": 50.23
+      "GBP": 67.85,
+      "EUR": 50.23
     },
     "NEO": {
-      "USD": 12.85,
-      "GBP": 15.23
+      "GBP": 12,
+      "EUR": 10
     },
+    "ETH": {
+      "GBP": 1000,
+      "EUR": 899.12
+    }
   },
 ]
 
-describe('When fetching the entire coin list the CryptoCompare API', () => {
+const mockCoinlist = [{
+  Id: "1",
+  Symbol: "BTC",
+  FullName: "Bitcoin"
+}, {
+  Id: "2",
+  Symbol: "NEO",
+  FullName: "Neo"
+}, {
+  Id: "3",
+  Symbol: "ETH",
+  FullName: "Etherium"
+}]
+
+describe('When syncing all crypto currencies to the database', () => {
   let sut
   let api
 
   beforeEach(() => {
-    sut = new CryptoCompareSync({ assets: ['BTC', 'ETH', 'BQX', 'NEO'], currencies: ['GBP', 'EUR'] })
+    sut = new CryptoCompareSync({ currencies: ['GBP', 'EUR'] })
 
     spyOn(sut.api, 'getCoinList').andReturn({ then: (cb) => cb(mockAssets) })
-    spyOn(db, 'add').andReturn({ then: (cb) => cb() })
+    spyOn(mongoUtil, 'remove').andReturn({ then: (cb) => cb() })
+    spyOn(mongoUtil, 'add').andReturn({ then: (cb) => cb() })
 
-    sut.saveAllCoins()
+    sut.saveCoinList()
   })
 
-  it('should prepare a request with each asset', () => {
+  it('should prepare a request to fetch the coin list', () => {
     expect(sut.api.getCoinList).toHaveBeenCalled()
   })
 
-  it('should add to the database with the formatted orders', () => {
-    expect(db.add).toHaveBeenCalledWith({
-      type: 'coin-list',
-      assets: mockAssets
-    })
+  it('should remove the existing coin data from the database', () => {
+    expect(mongoUtil.remove).toHaveBeenCalledWith('CoinList')
+  })
+
+  it('should add to the database with the coin data', () => {
+    expect(mongoUtil.add).toHaveBeenCalledWith('CoinList', mockAssets)
   })
 })
 
-describe('When syncing select assets to the database', () => {
+describe('When saving the current fiat conversions for all coins', () => {
   let sut
-  let api
 
   beforeEach(() => {
-    sut = new CryptoCompareSync({ assets: ['BTC', 'ETH', 'BQX', 'NEO'], currencies: ['GBP', 'EUR'] })
+    sut = new CryptoCompareSync({ currencies: ['GBP', 'EUR'] })
+    
+    Config.MAX_REQUEST_TOKENS = 2
 
-    spyOn(sut.api, 'getExchangeRates')
+    spyOn(sut.api, 'getExchangeRates').andCallFake((tokens) => tokens)
+    spyOn(mongoUtil, 'getCollection').andReturn({ then: (cb) => cb(mockCoinlist) })
+    spyOn(mongoUtil, 'add').andReturn({ then: (cb) => cb(mockCoinlist) })
+    spyOn(mongoUtil, 'remove').andReturn({ then: (cb) => cb() })
     spyOn(Promise, 'all').andReturn({ then: (cb) => cb(mockAssets) })
-    spyOn(db, 'add').andReturn({ then: (cb) => cb() })
 
-    sut.saveAssets()
+    sut.saveCoinPrices()
   })
 
-  it('should prepare a request with each asset', () => {
-    expect(sut.api.getExchangeRates).toHaveBeenCalledWith('BTC', ['GBP', 'EUR'])
-    expect(sut.api.getExchangeRates).toHaveBeenCalledWith('ETH', ['GBP', 'EUR'])
-    expect(sut.api.getExchangeRates).toHaveBeenCalledWith('BQX', ['GBP', 'EUR'])
-    expect(sut.api.getExchangeRates).toHaveBeenCalledWith('NEO', ['GBP', 'EUR'])
+  it('should get the coin list', () => {
+    expect(mongoUtil.getCollection).toHaveBeenCalledWith('CoinList')
   })
 
-  it('should add to the database with the formatted orders', () => {
-    expect(db.add).toHaveBeenCalledWith({
-      type: 'assets',
-      assets: mockAssets
-    })
+  it('should split the coin list into multiple requests', () => {
+    expect(Promise.all).toHaveBeenCalledWith([['BTC', 'NEO'], ['ETH']])
+  })
+
+  it('should clear the existing prices from the collection', () => {
+    expect(mongoUtil.remove).toHaveBeenCalledWith('CoinPrices')
+  })
+
+  it('should add the formatted fiat balance conversions to the database', () => {
+    expect(mongoUtil.add).toHaveBeenCalledWith('CoinPrices', [
+      { Symbol: 'BTC', Balances: { 'GBP': 67.85, 'EUR': 50.23 } },
+      { Symbol: 'NEO', Balances: { 'GBP': 12, 'EUR': 10 } },
+      { Symbol: 'ETH', Balances: { 'GBP': 1000, 'EUR': 899.12 } }
+    ])
   })
 })

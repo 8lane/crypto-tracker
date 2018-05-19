@@ -2,12 +2,13 @@
 const request = require('request')
 const qs = require('querystring')
 const crypto = require('crypto')
-const nano = require('nano')('http://localhost:5984')
 const keys = require('./secretStuff')
 
 const BinanceSync = require('./src/integrations/Binance/Sync')
 const CoinApiSync = require('./src/integrations/CoinApi/Sync')
 const CryptoCompareSync = require('./src/integrations/CryptoCompare/Sync')
+
+const mongoUtil = require('./src/utils/db')
 
 // const sync = new BinanceSync({
 //   userId: 1,
@@ -23,11 +24,7 @@ const CryptoCompareSync = require('./src/integrations/CryptoCompare/Sync')
 //   assets: ['NEO', 'DRGN']
 // })
 
-const coins = new CryptoCompareSync({
-  assets: ['NEO', 'DRGN'],
-  currencies: ['USD', 'GBP']
+mongoUtil.connect().then(() => {
+  const coinList = new CryptoCompareSync({ currencies: ['USD', 'GBP', 'EUR'] })
+  coinList.saveCoinPrices()
 })
-
-coins.saveAllCoins()
-
-
